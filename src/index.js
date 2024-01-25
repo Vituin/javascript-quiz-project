@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     new Question("What is the mass–energy equivalence equation?", ["E = mc^2", "E = m*c^2", "E = m*c^3", "E = m*c"], "E = mc^2", 3),
     // Add more questions here
   ];
-  const quizDuration = 120; // 120 seconds (2 minutes)
+  const quizDuration = 20; // 120 seconds (2 minutes)
 
 
   /************  QUIZ INSTANCE  ************/
@@ -45,13 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /************  SHOW INITIAL CONTENT  ************/
 
-  // Convert the time remaining in seconds to minutes and seconds, and pad the numbers with zeros if needed
-  const minutes = Math.floor(quiz.timeRemaining / 60).toString().padStart(2, "0");
-  const seconds = (quiz.timeRemaining % 60).toString().padStart(2, "0");
 
-  // Display the time remaining in the time remaining container
-  const timeRemainingContainer = document.getElementById("timeRemaining");
-  timeRemainingContainer.innerText = `${minutes}:${seconds}`;
 
   // Show first question
   showQuestion();
@@ -59,7 +53,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /************  TIMER  ************/
 
-  let timer;
+  let timer = setInterval(() => {
+
+    quiz.timeRemaining--
+    console.log(timeRemaining)
+
+    const minutes = Math.floor(quiz.timeRemaining / 60).toString().padStart(2, "0");
+    const seconds = (quiz.timeRemaining % 60).toString().padStart(2, "0");
+
+    const timeRemainingContainer = document.getElementById("timeRemaining");
+    timeRemainingContainer.innerText = `${minutes}:${seconds}`;
+
+    if (quiz.timeRemaining === 0) {
+      endView.style.display = "display";
+      showResults()
+      clearInterval(timer)
+
+    } else if (quiz.currentQuestionIndex === quiz.questions.length) {
+      endView.style.display = "display";
+      showResults()
+      clearInterval(timer)
+    }
+
+  }, 1000)
+
 
 
   /************  EVENT LISTENERS  ************/
@@ -98,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     //
     // 1. Show the question
     // Update the inner text of the question container element and show the question text
+
     console.log('----', question)
     questionContainer.innerHTML = question.text
 
@@ -105,9 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Update the green progress bar
     // Update the green progress bar (div#progressBar) width so that it shows the percentage of questions answered
 
-    const greenProgress = (quiz.currentQuestionIndex + 1 / quiz.questions.length) * 100
+    const greenProgress = (quiz.currentQuestionIndex / quiz.questions.length) * 100
     progressBar.style.width = `${greenProgress}%`; // This value is hardcoded as a placeholder
-
 
 
     // 3. Update the question count text 
@@ -142,9 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
       radioButton.setAttribute('value', eachChoice)
 
       radioText.innerHTML = eachChoice
-      radioText.setAttribute('type', 'radio')
-      radioText.setAttribute('name', 'choice')
-      radioText.setAttribute('value', eachChoice)
 
       choiceContainer.appendChild(radioButton)
       choiceContainer.appendChild(radioText)
@@ -158,7 +172,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   function nextButtonHandler() {
-    let selectedAnswer; // A variable to store the selected answer value
 
     // 1. Get all the choice elements. You can use the `document.querySelectorAll()` method.
     const allChoices = document.querySelectorAll('input')
@@ -167,26 +180,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // Hint: Radio input elements have a property `.checked` (e.g., `element.checked`).
     //  When a radio input gets selected the `.checked` property will be set to true.
     //  You can use check which choice was selected by checking if the `.checked` property is true.
-    allChoices.forEach(eachChoice => {
-      if (eachChoice.checked) {
-        quiz.checkAnswer(eachChoice)
-
-      }
-    })
 
     // 3. If an answer is selected (`selectedAnswer`), check if it is correct and move to the next question
     // Check if selected answer is correct by calling the quiz method `checkAnswer()` with the selected answer.
     // Move to the next question by calling the quiz method `moveToNextQuestion()`.
     // Show the next question by calling the function `showQuestion()`.
-    quiz.moveToNextQuestion
-    quiz.showQuestion
+
+    allChoices.forEach(eachChoice => {
+      if (eachChoice.checked) {
+        quiz.checkAnswer(eachChoice.value)
+
+      }
+    })
+
+    quiz.moveToNextQuestion()
+    showQuestion()
   }
 
 
   function showResults() {
 
-    // YOUR CODE HERE:
-    //
     // 1. Hide the quiz view (div#quizView)
     quizView.style.display = "none";
 
@@ -194,7 +207,25 @@ document.addEventListener("DOMContentLoaded", () => {
     endView.style.display = "flex";
 
     // 3. Update the result container (div#result) inner text to show the number of correct answers out of total questions
-    resultContainer.innerText = `You scored 1 out of 1 correct answers!`; // This value is hardcoded as a placeholder
+    resultContainer.innerText = `You scored ${quiz.correctAnswers} out of ${quiz.questions.length} correct answers!`; // This value is hardcoded as a placeholder
   }
+
+  const restartButton = document.querySelector("#restartButton");
+  function reloadBrowser() {
+    location.reload();
+  }
+  restartQuiz.onclick = () => {
+    quiz.currentQuestionIndex = 0;
+    quiz.correctAnswers = 0;
+    quiz.moveToNextQuestion()
+    quizView.style.display = "flex";
+    endView.style.display = "none";
+    const totalQuestions = quiz.questions.length;
+    const currentQuestion = quiz.currentQuestionIndex
+    const progressPercent = (currentQuestion / totalQuestions) * 100
+    progressBar.style.width = `${progressPercent}%`;
+    reloadBrowser()
+  }
+  endView.content.appendChild(restartButton)
 
 });
